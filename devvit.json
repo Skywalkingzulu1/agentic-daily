@@ -1,0 +1,25 @@
+{
+  "name": "AgenticDaily",
+  "version": "1.0.0",
+  "description": "A daily thread puzzle game for Reddit — solve in the comments, compete on the leaderboard.",
+  "author": "Skywalkingzulu1",
+  "license": "MIT",
+  "devvit": {
+    "client": {
+      "webView": {
+        "element": "root",
+        "uri": "http://localhost:5173"
+      }
+    },
+    "server": {
+      "entry": "src/server/index.ts"
+    },
+    "subreddit": "AgenticDaily",
+    "permissions": {
+      "comments": ["read", "write"],
+      "posts": ["read"],
+      "storage": ["read", "write"],
+      "web": ["read"]
+    }
+  }
+}
