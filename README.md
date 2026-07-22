@@ -26,7 +26,10 @@ src/
   storage/      — Devvit KV wrapper
 .github/workflows/ — daily scheduled puzzle job
 puzzles/        — daily generated puzzle JSON artifacts
+scripts/        — local puzzle generator
 ```
 
-## Status
-Hackathon submission for **Reddit Games with a Hook** (Jul 2026).
+## Hackathon
+**Reddit Games with a Hook** (Jul 2026)
+- Prize categories: Best App with a Hook, Best Use of Retention Mechanics, Best Use of User Contributions
+- Built with Devvit Web + Phaser-ready architecture
