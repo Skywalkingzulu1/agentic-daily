@@ -1,0 +1,11 @@
+{
+  "day": 1,
+  "mechanic": "pattern",
+  "prompt": "What comes next? 8, 16, 32, 64, ?",
+  "answer": "128",
+  "hints": [
+    "Each number doubles the previous one.",
+    "Think powers of 2."
+  ],
+  "seed": "retro gaming"
+}

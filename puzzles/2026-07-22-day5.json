@@ -1,0 +1,11 @@
+{
+  "day": 5,
+  "mechanic": "numberpath",
+  "prompt": "Start at 1. Add 3 or subtract 1 each step. Minimum steps to reach exactly 10?",
+  "answer": "3",
+  "hints": [
+    "Each +3 move gets you closer.",
+    "Use only +3 moves to minimize steps."
+  ],
+  "seed": "mountain hiking"
+}

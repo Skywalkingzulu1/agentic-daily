@@ -1,0 +1,11 @@
+{
+  "day": 2,
+  "mechanic": "wordchain",
+  "prompt": "What single word connects these clues about \"baking bread\"?",
+  "answer": "baking",
+  "hints": [
+    "It is the main topic.",
+    "Look at the first word of the theme."
+  ],
+  "seed": "baking bread"
+}

@@ -1,0 +1,11 @@
+{
+  "day": 4,
+  "mechanic": "emojimath",
+  "prompt": "🎵 + 🎵 + 🎵 = 6. What is 🎵 × 3?",
+  "answer": "6",
+  "hints": [
+    "Solve for the emoji first.",
+    "Then multiply."
+  ],
+  "seed": "DIY robotics"
+}

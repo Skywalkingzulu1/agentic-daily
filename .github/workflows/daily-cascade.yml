@@ -1,0 +1,24 @@
+name: Daily Cascade Puzzle
+
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - run: node scripts/generate-daily.js
+      - run: |
+        git config --global user.name "Agent Hack"
+        git config --global user.email "agent@skywalkingzulu1.dev"
+        git add puzzles/
+        git diff --cached --quiet || git commit -m "chore: daily puzzle $(date +%Y-%m-%d)"
+        git push

@@ -1,0 +1,11 @@
+{
+  "day": 3,
+  "mechanic": "logicgrid",
+  "prompt": "If A < B and B < C, is A > C? Answer yes or no.",
+  "answer": "no",
+  "hints": [
+    "Consider the relationship between A and C.",
+    "Think about transitivity."
+  ],
+  "seed": "street art"
+}

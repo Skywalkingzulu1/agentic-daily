@@ -1,69 +1,94 @@
-import { Hono } from 'hono';
+import { Hono, Context } from 'hono';
 import { z } from 'zod';
+import { generatePuzzle } from '../agent/generator.js';
+import { validatePuzzle } from '../agent/validator.js';
+import { scrapeThemes } from '../agent/scraper.js';
 
-const app = new Hono();
+type Env = {
+  devvitKv: {
+    get(key: string): Promise<any>;
+    set(key: string, value: any): Promise<void>;
+    list(prefix: string): Promise<{ keys: { name: string }[] }>;
+  };
+};
 
-app.get('/api/puzzle/today', (c) => {
-  return c.json({
-    day: 1,
-    mechanic: 'pattern',
-    prompt: 'What comes next? 2, 4, 8, 16, ?',
-    seed: 'demo',
-    answer: '32',
-  });
-});
+const app = new Hono<{ Bindings: Env }>();
 
-const SubmitSchema = z.object({ answer: z.string().min(1).max(200) });
-
-app.post('/api/puzzle/submit', async (c) => {
-  const body = await c.req.json();
-  const parsed = SubmitSchema.safeParse(body);
-  if (!parsed.success) {
-    return c.json({ correct: false, error: 'invalid' }, 400);
-  }
-
-  const { answer } = parsed.data;
-  const normalized = answer.trim().toLowerCase();
-
-  const puzzle = await getTodayPuzzle(c);
-  const correct = normalized === puzzle.answer.toLowerCase();
-
-  if (correct) {
-    await incrementScore(c, c.req.header('x-reddit-user-id') || 'anon', 10);
-  }
-
-  return c.json({ correct });
-});
-
-app.get('/api/leaderboard', async (c) => {
-  const board = await getLeaderboard(c);
-  return c.json(board);
-});
-
-async function getTodayPuzzle(c: any) {
-  const kv = c.get('devvit-kv');
-  const stored = await kv.get('puzzle:today');
-  if (stored) return stored as any;
-  return { day: 1, mechanic: 'pattern', prompt: 'What comes next? 2, 4, 8, 16, ?', seed: 'demo', answer: '32' };
+function dayKey(day: number): string {
+  return `puzzle:day:${day}`;
 }
 
-async function incrementScore(c: any, userId: string, delta: number) {
-  const kv = c.get('devvit-kv');
-  const key = `score:${userId}`;
-  const current = ((await kv.get(key)) as any) || { score: 0, streak: 0 };
-  await kv.set(key, { score: current.score + delta, streak: current.streak + 1 });
+function todayKey(): string {
+  const now = new Date();
+  return `puzzle:day:${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
-async function getLeaderboard(c: any) {
-  const kv = c.get('devvit-kv');
-  const keys = await kv.list('score:');
-  const entries: any[] = [];
-  for (const key of keys) {
-    const val = await kv.get(key);
-    if (val) entries.push(val);
+app.get('/api/puzzle/today', async (c) => {
+  try {
+    const kv = c.env.devvitKv;
+    const key = todayKey();
+    const stored = await kv.get(key);
+    if (stored && validatePuzzle(stored)) {
+      return c.json(stored);
+    }
+    const themes = await scrapeThemes(['all']);
+    const dayNum = await getCurrentDay(c);
+    const puzzle = await generatePuzzle(dayNum, themes);
+    await kv.set(key, puzzle);
+    return c.json(puzzle);
+  } catch (err) {
+    return c.json({ error: 'Failed to load today puzzle' }, 500);
   }
-  entries.sort((a, b) => b.score - a.score);
-  return entries.slice(0, 10);
+});
+
+app.get('/api/puzzle/:day', async (c) => {
+  try {
+    const day = parseInt(c.req.param('day'), 10);
+    if (Number.isNaN(day) || day < 1) {
+      return c.json({ error: 'Invalid day' }, 400);
+    }
+    const kv = c.env.devvitKv;
+    const stored = await kv.get(dayKey(day));
+    if (stored && validatePuzzle(stored)) {
+      return c.json(stored);
+    }
+    const themes = await scrapeThemes(['all']);
+    const puzzle = await generatePuzzle(day, themes);
+    await kv.set(dayKey(day), puzzle);
+    return c.json(puzzle);
+  } catch (err) {
+    return c.json({ error: 'Failed to load puzzle' }, 500);
+  }
+});
+
+app.post('/api/puzzle/seed', async (c) => {
+  try {
+    const BodySchema = z.object({ day: z.number().int().positive() });
+    const body = BodySchema.safeParse(await c.req.json());
+    if (!body.success) {
+      return c.json({ error: 'Invalid body' }, 400);
+    }
+    const day = body.data.day;
+    const kv = c.env.devvitKv;
+    const themes = await scrapeThemes(['all']);
+    const puzzle = await generatePuzzle(day, themes);
+    if (!validatePuzzle(puzzle)) {
+      return c.json({ error: 'Generated invalid puzzle' }, 500);
+    }
+    await kv.set(dayKey(day), puzzle);
+    return c.json({ success: true, puzzle });
+  } catch (err) {
+    return c.json({ error: 'Failed to seed puzzle' }, 500);
+  }
+});
+
+async function getCurrentDay(c: Context): Promise<number> {
+  const kv = c.env.devvitKv;
+  const meta = await kv.get('meta:currentDay');
+  if (meta && typeof meta === 'object' && typeof (meta as any).day === 'number') {
+    return (meta as any).day;
+  }
+  return 1;
 }
 
 export default app;
